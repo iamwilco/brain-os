@@ -1,0 +1,519 @@
+{
+  "version": "2.0",
+  "created": "2026-02-05",
+  "updated": "2026-02-05",
+  "milestones": {
+    "M1": {
+      "name": "Deterministic Loop",
+      "description": "Implement the 4-stage agent loop with locking and token tracking",
+      "target": "2026-02-19",
+      "status": "pending"
+    },
+    "M2": {
+      "name": "Memory System",
+      "description": "Implement compaction, memory flush, and tool pruning",
+      "target": "2026-03-05",
+      "status": "pending"
+    },
+    "M3": {
+      "name": "Multi-Agent",
+      "description": "Implement message protocol and subagent spawn",
+      "target": "2026-03-19",
+      "status": "pending"
+    },
+    "M4": {
+      "name": "Autonomy",
+      "description": "Implement scheduled runs and self-correction",
+      "target": "2026-04-02",
+      "status": "pending"
+    }
+  },
+  "tasks": [
+    {
+      "id": "TASK-100",
+      "milestone": "M1",
+      "priority": 1,
+      "status": "completed",
+      "title": "Implement session locking mechanism",
+      "description": "Create SessionLock interface and implementation that prevents concurrent execution on same session",
+      "acceptance_criteria": [
+        "Lock acquired before loop starts",
+        "Lock released after loop ends (even on error)",
+        "Lock has timeout for auto-release (15 min)",
+        "Queued requests wait for lock with timeout"
+      ],
+      "file_targets": [
+        "src/src/agent/session-lock.ts"
+      ],
+      "created": "2026-02-05",
+      "completed": "2026-02-05",
+      "blocked_by": [],
+      "prd_section": "3.2"
+    },
+    {
+      "id": "TASK-101",
+      "milestone": "M1",
+      "priority": 2,
+      "status": "completed",
+      "title": "Refactor chat handler into INTAKE stage",
+      "description": "Extract request validation, agent resolution, and lock acquisition into dedicated INTAKE function",
+      "acceptance_criteria": [
+        "INTAKE returns runId, sessionId, agentDef, lock",
+        "Validation errors return before lock acquired",
+        "Lock acquired only after validation passes"
+      ],
+      "file_targets": [
+        "src/src/agent/loop/intake.ts"
+      ],
+      "created": "2026-02-05",
+      "completed": "2026-02-05",
+      "blocked_by": ["TASK-100"],
+      "prd_section": "3.2"
+    },
+    {
+      "id": "TASK-102",
+      "milestone": "M1",
+      "priority": 3,
+      "status": "completed",
+      "title": "Implement CONTEXT stage",
+      "description": "Create CONTEXT function that loads memory, builds system prompt, and estimates tokens",
+      "acceptance_criteria": [
+        "MEMORY.md loaded and injected into prompt",
+        "Session history loaded from JSONL",
+        "Token count estimated before LLM call",
+        "Returns systemPrompt, history, tools, tokenEstimate"
+      ],
+      "file_targets": [
+        "src/src/agent/loop/context.ts"
+      ],
+      "created": "2026-02-05",
+      "completed": "2026-02-05",
+      "blocked_by": ["TASK-101"],
+      "prd_section": "3.2"
+    },
+    {
+      "id": "TASK-103",
+      "milestone": "M1",
+      "priority": 4,
+      "status": "completed",
+      "title": "Implement token estimation",
+      "description": "Create function to estimate token count for system prompt + history + message",
+      "acceptance_criteria": [
+        "Estimation within ±10% of actual",
+        "Fast execution (< 50ms)",
+        "Works with streaming content"
+      ],
+      "file_targets": [
+        "src/src/agent/tokens.ts"
+      ],
+      "created": "2026-02-05",
+      "completed": "2026-02-06",
+      "blocked_by": [],
+      "prd_section": "3.2"
+    },
+    {
+      "id": "TASK-104",
+      "milestone": "M1",
+      "priority": 5,
+      "status": "completed",
+      "title": "Refactor chat handler into EXECUTE stage",
+      "description": "Extract LLM call, tool execution, and response streaming into dedicated EXECUTE function",
+      "acceptance_criteria": [
+        "LLM called with assembled context",
+        "Tool calls detected and executed",
+        "Response streamed to client",
+        "Max tool iterations enforced (10)"
+      ],
+      "file_targets": [
+        "src/src/agent/loop/execute.ts"
+      ],
+      "created": "2026-02-05",
+      "completed": "2026-02-06",
+      "blocked_by": ["TASK-102"],
+      "prd_section": "3.2"
+    },
+    {
+      "id": "TASK-105",
+      "milestone": "M1",
+      "priority": 6,
+      "status": "completed",
+      "title": "Implement PERSIST stage",
+      "description": "Create PERSIST function that writes transcript, updates metadata, and releases lock",
+      "acceptance_criteria": [
+        "User + assistant messages appended to JSONL",
+        "Session metadata updated (last message, count)",
+        "Lock released in finally block",
+        "Errors logged but do not crash loop"
+      ],
+      "file_targets": [
+        "src/src/agent/loop/persist.ts"
+      ],
+      "created": "2026-02-05",
+      "completed": "2026-02-06",
+      "blocked_by": ["TASK-104"],
+      "prd_section": "3.2"
+    },
+    {
+      "id": "TASK-106",
+      "milestone": "M1",
+      "priority": 7,
+      "status": "completed",
+      "title": "Wire up complete agent loop",
+      "description": "Integrate INTAKE → CONTEXT → EXECUTE → PERSIST into single loop function used by chat endpoint",
+      "acceptance_criteria": [
+        "Single entry point for agent execution",
+        "All stages called in order",
+        "Errors handled at each stage",
+        "Lock always released"
+      ],
+      "file_targets": [
+        "src/src/agent/loop/index.ts",
+        "src/src/server/routes/projects.ts"
+      ],
+      "created": "2026-02-05",
+      "completed": "2026-02-06",
+      "blocked_by": ["TASK-105"],
+      "prd_section": "3.2"
+    },
+    {
+      "id": "TASK-107",
+      "milestone": "M1",
+      "priority": 8,
+      "status": "completed",
+      "title": "Add loop event emissions",
+      "description": "Emit events at each stage of the loop for observability",
+      "acceptance_criteria": [
+        "loop:start emitted at INTAKE",
+        "loop:context emitted after CONTEXT",
+        "tool:start/end emitted during EXECUTE",
+        "loop:end emitted after PERSIST",
+        "loop:error emitted on failure"
+      ],
+      "file_targets": [
+        "src/src/agent/loop/events.ts"
+      ],
+      "created": "2026-02-05",
+      "completed": "2026-02-06",
+      "blocked_by": ["TASK-106"],
+      "prd_section": "3.2"
+    },
+    {
+      "id": "TASK-200",
+      "milestone": "M2",
+      "priority": 1,
+      "status": "completed",
+      "title": "Implement tool result pruning",
+      "description": "Remove old tool results from in-memory context without modifying transcript",
+      "acceptance_criteria": [
+        "Keep last N tool results in context (configurable)",
+        "Tool calls kept for context",
+        "Transcript unchanged",
+        "Applied during CONTEXT stage"
+      ],
+      "file_targets": [
+        "src/src/agent/loop/context.ts"
+      ],
+      "created": "2026-02-05",
+      "completed": "2026-02-06",
+      "blocked_by": ["TASK-102"],
+      "prd_section": "3.3"
+    },
+    {
+      "id": "TASK-201",
+      "milestone": "M2",
+      "priority": 2,
+      "status": "completed",
+      "title": "Implement context window guard",
+      "description": "Check token estimate against context window and trigger compaction/flush when needed",
+      "acceptance_criteria": [
+        "Token threshold checked in CONTEXT",
+        "Memory flush triggered at soft threshold",
+        "Compaction triggered at hard threshold",
+        "Configurable thresholds"
+      ],
+      "file_targets": [
+        "src/src/agent/loop/context.ts",
+        "src/src/agent/context-guard.ts"
+      ],
+      "created": "2026-02-05",
+      "completed": "2026-02-06",
+      "blocked_by": ["TASK-103"],
+      "prd_section": "3.2"
+    },
+    {
+      "id": "TASK-202",
+      "milestone": "M2",
+      "priority": 3,
+      "status": "completed",
+      "title": "Implement memory flush flow",
+      "description": "Trigger silent agentic turn to persist memory before compaction",
+      "acceptance_criteria": [
+        "Silent system message injected",
+        "Agent prompted to write to MEMORY.md",
+        "NO_REPLY responses suppressed",
+        "One flush per compaction cycle"
+      ],
+      "file_targets": [
+        "src/src/agent/memory-flush.ts"
+      ],
+      "created": "2026-02-05",
+      "completed": "2026-02-06",
+      "blocked_by": ["TASK-201"],
+      "prd_section": "3.2"
+    },
+    {
+      "id": "TASK-203",
+      "milestone": "M2",
+      "priority": 4,
+      "status": "completed",
+      "title": "Implement compaction flow",
+      "description": "Summarize old messages and replace with compact summary",
+      "acceptance_criteria": [
+        "LLM called with history and compaction prompt",
+        "Summary replaces old messages",
+        "Recent N messages kept intact",
+        "Compacted transcript written"
+      ],
+      "file_targets": [
+        "src/src/agent/compaction.ts"
+      ],
+      "created": "2026-02-05",
+      "completed": "2026-02-06",
+      "blocked_by": ["TASK-202"],
+      "prd_section": "3.2"
+    },
+    {
+      "id": "TASK-204",
+      "milestone": "M2",
+      "priority": 5,
+      "status": "completed",
+      "title": "Enhance MEMORY.md read/write",
+      "description": "Improve memory loading and agent writing to MEMORY.md",
+      "acceptance_criteria": [
+        "Memory loaded in CONTEXT stage",
+        "Agent can write via tool",
+        "Structured sections supported",
+        "Memory size limits enforced"
+      ],
+      "file_targets": [
+        "src/src/agent/memory.ts"
+      ],
+      "created": "2026-02-05",
+      "completed": "2026-02-06",
+      "blocked_by": ["TASK-102"],
+      "prd_section": "3.3"
+    },
+    {
+      "id": "TASK-205",
+      "milestone": "M2",
+      "priority": 6,
+      "status": "completed",
+      "title": "Add memory events",
+      "description": "Emit events for memory operations",
+      "acceptance_criteria": [
+        "memory:read emitted on load",
+        "memory:write emitted on save",
+        "memory:flush emitted on flush",
+        "memory:compact emitted on compaction"
+      ],
+      "file_targets": [
+        "src/src/agent/loop/events.ts"
+      ],
+      "created": "2026-02-05",
+      "completed": "2026-02-08",
+      "blocked_by": ["TASK-204"],
+      "prd_section": "3.3"
+    },
+    {
+      "id": "TASK-300",
+      "milestone": "M3",
+      "priority": 1,
+      "status": "completed",
+      "title": "Define agent message protocol",
+      "description": "Create TypeScript interfaces for inter-agent messages",
+      "acceptance_criteria": [
+        "AgentMessage interface with from/to/type/payload",
+        "Request/Response/Notify message types",
+        "Payload schemas for common operations",
+        "Validation with Zod"
+      ],
+      "file_targets": [
+        "src/src/agent/protocol.ts"
+      ],
+      "created": "2026-02-05",
+      "completed": "2026-02-08",
+      "blocked_by": [],
+      "prd_section": "3.4"
+    },
+    {
+      "id": "TASK-301",
+      "milestone": "M3",
+      "priority": 2,
+      "status": "completed",
+      "title": "Implement subagent spawn",
+      "description": "Allow Admin agent to spawn Skill agents with context",
+      "acceptance_criteria": [
+        "spawn_agent tool available to Admin",
+        "Context passed to skill agent",
+        "Skill executes and returns result",
+        "Result incorporated into Admin response"
+      ],
+      "file_targets": [
+        "src/src/agent/subagent.ts",
+        "src/src/agent/tools/spawn.ts"
+      ],
+      "created": "2026-02-05",
+      "completed": "2026-02-08",
+      "blocked_by": ["TASK-300"],
+      "prd_section": "3.4"
+    },
+    {
+      "id": "TASK-302",
+      "milestone": "M3",
+      "priority": 3,
+      "status": "completed",
+      "title": "Implement scope enforcement",
+      "description": "Ensure agents cannot access files outside their defined scope",
+      "acceptance_criteria": [
+        "Scope parsed from AGENT.md",
+        "Every file access checked against scope",
+        "Denied access logged and returned as error",
+        "Admin has full scope"
+      ],
+      "file_targets": [
+        "src/src/agent/scope.ts"
+      ],
+      "created": "2026-02-05",
+      "completed": "2026-02-08",
+      "blocked_by": [],
+      "prd_section": "3.4"
+    },
+    {
+      "id": "TASK-303",
+      "milestone": "M3",
+      "priority": 4,
+      "status": "completed",
+      "title": "Add subagent allowlist",
+      "description": "Control which agents can spawn which other agents",
+      "acceptance_criteria": [
+        "Allowlist in config",
+        "Spawn denied if not in allowlist",
+        "Admin can spawn any skill",
+        "Project agents cannot spawn by default"
+      ],
+      "file_targets": [
+        "src/src/agent/subagent.ts"
+      ],
+      "created": "2026-02-05",
+      "completed": "2026-02-08",
+      "blocked_by": ["TASK-301"],
+      "prd_section": "3.4"
+    },
+    {
+      "id": "TASK-400",
+      "milestone": "M4",
+      "priority": 1,
+      "status": "completed",
+      "title": "Implement scheduled agent runs",
+      "description": "Allow agents to run on schedule without user prompt",
+      "acceptance_criteria": [
+        "Cron syntax for scheduling",
+        "Agent runs at scheduled time",
+        "Results written to session",
+        "Errors logged and alerted"
+      ],
+      "file_targets": [
+        "src/src/agent/scheduler.ts"
+      ],
+      "created": "2026-02-05",
+      "completed": "2026-02-08",
+      "blocked_by": ["TASK-106"],
+      "prd_section": "5.2"
+    },
+    {
+      "id": "TASK-401",
+      "milestone": "M4",
+      "priority": 2,
+      "status": "completed",
+      "title": "Implement triggered behaviors",
+      "description": "Allow agents to run in response to events (file upload, extraction complete, etc.)",
+      "acceptance_criteria": [
+        "Event triggers defined",
+        "Agent spawned on trigger",
+        "Context includes trigger info",
+        "Results logged"
+      ],
+      "file_targets": [
+        "src/src/agent/triggers.ts"
+      ],
+      "created": "2026-02-05",
+      "completed": "2026-02-08",
+      "blocked_by": ["TASK-400"],
+      "prd_section": "5.3"
+    },
+    {
+      "id": "TASK-402",
+      "milestone": "M4",
+      "priority": 3,
+      "status": "completed",
+      "title": "Implement self-correction",
+      "description": "Allow agents to retry failed operations and escalate if needed",
+      "acceptance_criteria": [
+        "Retry logic with exponential backoff",
+        "Max retry count configurable",
+        "Escalation to human after max retries",
+        "Error context preserved"
+      ],
+      "file_targets": [
+        "src/src/agent/retry.ts"
+      ],
+      "created": "2026-02-05",
+      "completed": "2026-02-08",
+      "blocked_by": ["TASK-106"],
+      "prd_section": "2"
+    },
+    {
+      "id": "TASK-403",
+      "milestone": "M4",
+      "priority": 4,
+      "status": "completed",
+      "title": "Add autonomy dashboard",
+      "description": "UI to view scheduled runs, triggered behaviors, and agent status",
+      "acceptance_criteria": [
+        "List of scheduled runs",
+        "History of triggered behaviors",
+        "Agent health status",
+        "Error log viewer"
+      ],
+      "file_targets": [
+        "frontend/src/pages/AutonomyPage.tsx"
+      ],
+      "created": "2026-02-05",
+      "completed": "2026-02-08",
+      "blocked_by": ["TASK-401"],
+      "prd_section": "7.3"
+    },
+    {
+      "id": "TASK-500",
+      "milestone": "M2",
+      "priority": 7,
+      "status": "completed",
+      "title": "Implement vector memory search",
+      "description": "Add embeddings-based semantic search for MEMORY.md and items.json",
+      "acceptance_criteria": [
+        "Embeddings generated for memory chunks",
+        "Vector similarity search available",
+        "Hybrid search (vector + FTS5) supported",
+        "Search results ranked by relevance"
+      ],
+      "file_targets": [
+        "src/src/search/vector.ts",
+        "src/src/search/hybrid.ts"
+      ],
+      "created": "2026-02-05",
+      "completed": "2026-02-08",
+      "blocked_by": [],
+      "prd_section": "3.1"
+    }
+  ]
+}
