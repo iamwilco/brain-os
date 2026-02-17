@@ -163,14 +163,18 @@ export function getAgentSpawnPath(
     case 'admin':
       return join(vaultPath, '40_Brain', 'agents', 'admin');
     case 'skill':
-      const skillName = config.name.toLowerCase().replace(/\s+/g, '-');
-      return join(vaultPath, '40_Brain', 'agents', 'skills', skillName);
+      {
+        const skillName = config.name.toLowerCase().replace(/\s+/g, '-');
+        return join(vaultPath, '40_Brain', 'agents', 'skills', skillName);
+      }
     case 'project':
       if (config.projectPath) {
         return join(config.projectPath, 'agent');
       }
-      const projectName = config.name.toLowerCase().replace(/\s+/g, '-');
-      return join(vaultPath, '30_Projects', projectName, 'agent');
+      {
+        const projectName = config.name.toLowerCase().replace(/\s+/g, '-');
+        return join(vaultPath, '30_Projects', projectName, 'agent');
+      }
     default:
       throw new Error(`Unknown agent type: ${config.type}`);
   }

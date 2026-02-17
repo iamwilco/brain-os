@@ -164,7 +164,12 @@ describe('PERSIST Stage', () => {
       expect(result.errors.length).toBeGreaterThan(0);
       
       // Reset mock for other tests
-      vi.mocked(appendToTranscript).mockResolvedValue({ id: 'msg-1' } as any);
+      vi.mocked(appendToTranscript).mockResolvedValue({
+        id: 'msg-1',
+        role: 'assistant',
+        content: 'ok',
+        timestamp: new Date().toISOString(),
+      });
     });
   });
 

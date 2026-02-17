@@ -22,7 +22,7 @@ export interface ParsedScope {
  * Supports: * (any chars), ** (any path), ? (single char)
  */
 export function globToRegex(glob: string): RegExp {
-  let regex = glob
+  const regex = glob
     // Escape special regex chars (except * and ?)
     .replace(/[.+^${}()|[\]\\]/g, '\\$&')
     // **/ at start matches zero or more path segments

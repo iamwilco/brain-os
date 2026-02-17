@@ -8,7 +8,8 @@
 
 import { intake, releaseIntake, isIntakeError, intakeErrorToHttpStatus, type IntakeInput, type IntakeOutput } from './intake.js';
 import { context, contextRequiresAction, type ContextInput, type ContextOutput } from './context.js';
-import { execute, type ExecuteInput, type ExecuteOutput, type LLMHandler, type ToolExecutor, placeholderLLMHandler, placeholderToolExecutor } from './execute.js';
+import { execute, type ExecuteInput, type ExecuteOutput, type LLMHandler, type ToolExecutor, placeholderToolExecutor } from './execute.js';
+import { createDefaultLLMHandler } from '../../llm/handler.js';
 import { persist, hasCriticalFailures, type PersistInput, type PersistOutput } from './persist.js';
 
 /**
@@ -83,7 +84,7 @@ export interface AgentLoopConfig {
 }
 
 const DEFAULT_CONFIG: AgentLoopConfig = {
-  llmHandler: placeholderLLMHandler,
+  llmHandler: createDefaultLLMHandler(),
   toolExecutor: placeholderToolExecutor,
   includeStageOutputs: false,
   contextWindow: 100_000,

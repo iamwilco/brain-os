@@ -374,13 +374,13 @@ export function createHybridSearchEngine(
 /**
  * Create hybrid search engine with new vector store
  */
-export function createHybridSearch(
+export async function createHybridSearch(
   db: DatabaseInstance,
   embeddingProvider?: EmbeddingProvider
-): { engine: HybridSearchEngine; vectorStore: VectorStore } {
-  const { createVectorStore } = require('./vector.js');
+): Promise<{ engine: HybridSearchEngine; vectorStore: VectorStore }> {
+  const { createVectorStore } = await import('./vector.js');
   const vectorStore = createVectorStore(db, embeddingProvider);
   const engine = new HybridSearchEngine(db, vectorStore);
-  
+
   return { engine, vectorStore };
 }

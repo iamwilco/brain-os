@@ -268,7 +268,7 @@ export async function indexSources(
   let files: FileInfo[];
   try {
     files = await collectFiles(sourcesPath, sourcesPath);
-  } catch (err) {
+  } catch {
     // Directory might not exist
     files = [];
   }

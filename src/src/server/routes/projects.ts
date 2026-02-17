@@ -9,8 +9,12 @@ import { join, extname } from 'path';
 import type { MultipartFile } from '@fastify/multipart';
 import { ZodError } from 'zod';
 import { initChatContext, sendMessage, buildSystemPrompt, type ChatContext } from '../../agent/chat.js';
-import { loadMemory, applyMemoryUpdates, type MemoryUpdate } from '../../agent/memory.js';
+import { applyMemoryUpdates, type MemoryUpdate } from '../../agent/memory.js';
 import { listSessions, readTranscript, type SessionMetadata, type TranscriptMessage } from '../../agent/session.js';
+import { runAgentLoop } from '../../agent/loop/index.js';
+import { getConfig, hasProvider } from '../../config/index.js';
+import { createClaudeProvider } from '../../llm/claude.js';
+import type { ChatMessage } from '../../llm/provider.js';
 import {
   ProjectCreateSchema,
   ProjectUpdateSchema,
@@ -497,7 +501,7 @@ ${data.description || ''}
     }
 
     const { id } = params;
-    const { message, sessionId } = data;
+    const { message, sessionId, stream } = data;
 
     // Get project
     const project = dbInstance.prepare('SELECT * FROM projects WHERE id = ?').get(id) as Project | undefined;
@@ -525,44 +529,71 @@ ${data.description || ''}
       return reply.status(500).send({ error: 'Failed to initialize chat context' });
     }
 
-    // Load memory for context
-    let memoryContent = '';
-    try {
-      const memory = await loadMemory(agentPath);
-      if (memory) {
-        memoryContent = memory.raw;
-      }
-    } catch {
-      // No memory available
+    // Build system prompt with agent definition and memory
+
+    // Stream response if requested (SSE)
+    if (stream) {
+      reply.raw.setHeader('Content-Type', 'text/event-stream');
+      reply.raw.setHeader('Cache-Control', 'no-cache');
+      reply.raw.setHeader('Connection', 'keep-alive');
+
+      const projectHandler = async (userMessage: string, ctx: ChatContext): Promise<string> => {
+        const systemPrompt = buildSystemPrompt(ctx.agent);
+
+        if (!hasProvider('anthropic')) {
+          const fallback = 'LLM not configured. Set ANTHROPIC_API_KEY to enable Claude.';
+          reply.raw.write(`data: ${JSON.stringify({ type: 'error', message: fallback })}\n\n`);
+          return fallback;
+        }
+
+        const config = getConfig();
+        const provider = createClaudeProvider(config.anthropicApiKey);
+        const messages: ChatMessage[] = [
+          { role: 'system', content: systemPrompt },
+          ...ctx.history.map<ChatMessage>((msg) => ({
+            role: (msg.role === 'assistant' || msg.role === 'system')
+              ? msg.role
+              : 'user',
+            content: msg.content,
+          })),
+          { role: 'user', content: userMessage },
+        ];
+
+        let finalContent = '';
+        for await (const chunk of provider.stream?.(messages, {
+          model: config.model,
+          maxTokens: config.maxTokens,
+        }) ?? []) {
+          if (chunk.type === 'content' && chunk.content) {
+            finalContent += chunk.content;
+            reply.raw.write(`data: ${JSON.stringify({ type: 'content', content: chunk.content })}\n\n`);
+          }
+          if (chunk.type === 'error') {
+            reply.raw.write(`data: ${JSON.stringify({ type: 'error', message: chunk.error })}\n\n`);
+          }
+        }
+
+        reply.raw.write(`data: ${JSON.stringify({ type: 'done' })}\n\n`);
+        return finalContent || '[No response]';
+      };
+
+      await sendMessage(context, message, projectHandler);
+      reply.raw.end();
+      return reply;
     }
 
-    // Build system prompt with agent definition and memory
-    const linkedScopes = JSON.parse(project.linked_scopes || '[]') as string[];
-
-    // Create message handler that includes project context
-    const projectHandler = async (userMessage: string, ctx: ChatContext): Promise<string> => {
-      // Build system prompt for the agent
-      const systemPrompt = buildSystemPrompt(ctx.agent);
-      
-      // For now, return a structured response indicating the agent received the message
-      // In a full implementation, this would call an LLM with the system prompt
-      const agentName = ctx.agent.frontmatter.name;
-      const scopeInfo = linkedScopes.length > 0 
-        ? `\nLinked scopes: ${linkedScopes.join(', ')}`
-        : '';
-      
-      // Log that system prompt was built (will be used for LLM calls)
-      server.log.debug({ systemPromptLength: systemPrompt.length }, 'Built system prompt for project chat');
-      
-      return `[${agentName}] Received your message: "${userMessage}"${scopeInfo}\n\nMemory context available: ${memoryContent ? 'Yes' : 'No'}\n\n(Note: Full LLM integration pending - this is a placeholder response)`;
-    };
-
-    // Send message and get response
-    const response = await sendMessage(context, message, projectHandler);
+    // Non-streaming: use the agent loop for full LLM integration
+    const result = await runAgentLoop({
+      message,
+      vaultPath,
+      agentPath,
+      sessionId,
+      newSession: !sessionId,
+    });
 
     return {
-      response,
-      sessionId: context.session.id,
+      response: result.response,
+      sessionId: result.sessionId || context.session.id,
       agentId: agentIds[0],
       projectId: id,
     };

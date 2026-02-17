@@ -18,7 +18,7 @@
       "id": "P1-001",
       "phase": "P1",
       "priority": 1,
-      "status": "pending",
+      "status": "completed",
       "title": "Wire real LLM provider to agent loop",
       "description": "Connect Claude API to the execute stage of the agent loop. Replace mock LLM calls with actual API integration. Support streaming responses via SSE.",
       "acceptance_criteria": [
@@ -30,7 +30,7 @@
       ],
       "file_targets": ["src/src/llm/provider.ts", "src/src/agent/loop/execute.ts"],
       "created": "2026-02-17",
-      "completed": null,
+      "completed": "2026-02-17",
       "blocked_by": []
     },
     {

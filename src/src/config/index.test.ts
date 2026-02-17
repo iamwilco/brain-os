@@ -155,6 +155,7 @@ describe('Config singleton', () => {
   });
 
   it('should reset config on resetConfig call', () => {
+    const originalVaultPath = process.env.BRAIN_VAULT_PATH;
     setConfig({
       vaultPath: '/custom',
       dbPath: './test.db',
@@ -165,11 +166,17 @@ describe('Config singleton', () => {
       dryRun: true,
     });
 
+    process.env.BRAIN_VAULT_PATH = './';
     resetConfig();
     
     // After reset, getConfig will reload from env (which has defaults)
     const config = getConfig();
     expect(config.vaultPath).toBe('./');
+    if (originalVaultPath) {
+      process.env.BRAIN_VAULT_PATH = originalVaultPath;
+    } else {
+      delete process.env.BRAIN_VAULT_PATH;
+    }
   });
 });
 

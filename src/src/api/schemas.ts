@@ -33,6 +33,7 @@ export const ProjectSourcesUpdateSchema = z.object({
 export const ProjectChatSchema = z.object({
   message: z.string().min(1).max(10000),
   sessionId: z.string().optional(),
+  stream: z.boolean().optional().default(false),
 });
 
 export const ProjectSchema = z.object({

@@ -12,6 +12,13 @@ export default tseslint.config(
     },
   },
   {
+    files: ['**/*.test.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': 'off',
+      'no-empty-pattern': 'off',
+    },
+  },
+  {
     ignores: ['dist/', 'node_modules/', 'coverage/'],
   }
 );

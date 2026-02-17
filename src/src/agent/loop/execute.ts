@@ -259,10 +259,10 @@ export async function execute(
   
   const allToolCalls: ToolCall[] = [];
   const allToolResults: ToolResult[] = [];
-  let totalUsage: TokenUsage = { inputTokens: 0, outputTokens: 0, totalTokens: 0 };
+  const totalUsage: TokenUsage = { inputTokens: 0, outputTokens: 0, totalTokens: 0 };
   
   // Build initial messages
-  let messages = toMessages(context.history, message);
+  const messages = toMessages(context.history, message);
   
   // Set execution timeout
   const executionStart = Date.now();
