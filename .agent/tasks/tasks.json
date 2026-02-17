@@ -1,2100 +1,423 @@
 {
-  "version": "1.0.0",
-  "updated": "2026-02-01",
-  "currentMilestone": "M0",
+  "version": "3.0.0",
+  "updated": "2026-02-17",
+  "source": "docs/STRATEGIC_ROADMAP.md",
+  "phases": {
+    "P0": { "name": "Foundation (Complete)", "description": "Scaffold, ingestion, indexing, extraction, search, agents, frontend, autonomy", "status": "completed" },
+    "P1": { "name": "Wire Up", "description": "Make the system real — LLM integration, real embeddings, connect frontend, file watcher", "status": "active", "target": "2026-03-03" },
+    "P2": { "name": "Orchestrator + Workshop", "description": "Central routing, structured memory, workshop v1, model routing, skills registry", "status": "planned", "target": "2026-03-24" },
+    "P3": { "name": "Cortex + Auto-Improvement", "description": "Meta-agent, non-blocking execution, memory graph, circuit breakers", "status": "planned", "target": "2026-04-21" },
+    "P4": { "name": "Polish + Ecosystem", "description": "Obsidian plugin, knowledge graph viz, E2E tests, security", "status": "planned", "target": "2026-05-19" }
+  },
+  "completed_history": {
+    "note": "Tasks TASK-001 to TASK-050 (M0-M8) and TASK-100 to TASK-500 (M1-M4 vNext) are all completed. See tasks_vNext.json and git history for full details.",
+    "total_completed": 72
+  },
   "tasks": [
     {
-      "id": "TASK-001",
-      "milestone": "M0",
+      "id": "P1-001",
+      "phase": "P1",
       "priority": 1,
-      "status": "completed",
-      "description": "Create repo scaffold with package.json, tsconfig.json, and folder structure",
+      "status": "pending",
+      "title": "Wire real LLM provider to agent loop",
+      "description": "Connect Claude API to the execute stage of the agent loop. Replace mock LLM calls with actual API integration. Support streaming responses via SSE.",
       "acceptance_criteria": [
-        "package.json exists with correct dependencies",
-        "tsconfig.json configured for ESM TypeScript",
-        "src/ folder structure matches architecture",
-        "npm install runs without errors"
+        "Claude API called from execute.ts with real API key",
+        "Streaming responses delivered to client via SSE",
+        "Error handling for rate limits, timeouts, invalid keys",
+        "ANTHROPIC_API_KEY read from env (never hardcoded)",
+        "Graceful fallback message if no API key configured"
       ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
+      "file_targets": ["src/src/llm/provider.ts", "src/src/agent/loop/execute.ts"],
+      "created": "2026-02-17",
+      "completed": null,
       "blocked_by": []
     },
     {
-      "id": "TASK-002",
-      "milestone": "M0",
+      "id": "P1-002",
+      "phase": "P1",
       "priority": 2,
-      "status": "completed",
-      "description": "Implement config system with zod schema and dotenv",
+      "status": "pending",
+      "title": "Wire frontend to backend API",
+      "description": "Connect React hooks to real Fastify API endpoints. Replace all mock data in pages with live API calls. Ensure projects, agents, sources, and search pages work end-to-end.",
       "acceptance_criteria": [
-        "Config loads from .env file",
-        "Zod validates all config options",
-        "Sensible defaults provided",
-        "Config accessible throughout application"
+        "Dashboard fetches real project/agent counts from API",
+        "Projects page lists real projects from backend",
+        "Agents page shows agents from filesystem scan",
+        "Sources page lists indexed sources from SQLite",
+        "Search page performs real FTS5 queries",
+        "Error states and loading states handled"
       ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-001"]
+      "file_targets": ["frontend/src/hooks/", "frontend/src/pages/"],
+      "created": "2026-02-17",
+      "completed": null,
+      "blocked_by": []
     },
     {
-      "id": "TASK-003",
-      "milestone": "M0",
+      "id": "P1-003",
+      "phase": "P1",
       "priority": 3,
-      "status": "completed",
-      "description": "Create CLI skeleton with commander (all commands stubbed)",
+      "status": "pending",
+      "title": "Add real embedding provider",
+      "description": "Replace MockEmbeddingProvider with a real local embedding model using @xenova/transformers (runs locally, no API key). Update vector search to use real embeddings.",
       "acceptance_criteria": [
-        "brain --help shows all commands",
-        "All commands stubbed with placeholder implementations",
-        "Consistent command structure"
+        "Real embeddings generated via @xenova/transformers or similar",
+        "Embedding dimension matches vector search expectations",
+        "Model downloaded and cached locally on first use",
+        "vector.ts and hybrid.ts work with real embeddings",
+        "Fallback to mock if model load fails"
       ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-002"]
+      "file_targets": ["src/src/search/vector.ts", "src/src/search/embeddings.ts"],
+      "created": "2026-02-17",
+      "completed": null,
+      "blocked_by": []
     },
     {
-      "id": "TASK-004",
-      "milestone": "M0",
+      "id": "P1-004",
+      "phase": "P1",
       "priority": 4,
-      "status": "completed",
-      "description": "Implement brain init command to create vault skeleton",
+      "status": "pending",
+      "title": "Upgrade hybrid search to use Reciprocal Rank Fusion",
+      "description": "Replace the simple weighted average in hybrid.ts with RRF scoring (like Spacebot). RRF merges FTS5 and vector results by reciprocal rank rather than raw scores.",
       "acceptance_criteria": [
-        "Creates all required directories",
-        "Creates template files",
-        "Idempotent (safe to run multiple times)"
+        "RRF formula: score = sum(1 / (k + rank_i)) across result sets",
+        "Configurable k parameter (default: 60)",
+        "Results from FTS5 and vector search merged correctly",
+        "Tests updated to verify RRF scoring",
+        "Existing hybrid search API unchanged"
       ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-003"]
+      "file_targets": ["src/src/search/hybrid.ts", "src/src/search/hybrid.test.ts"],
+      "created": "2026-02-17",
+      "completed": null,
+      "blocked_by": ["P1-003"]
     },
     {
-      "id": "TASK-005",
-      "milestone": "M1",
+      "id": "P1-005",
+      "phase": "P1",
       "priority": 5,
-      "status": "completed",
-      "description": "Parse ChatGPT JSON export structure",
+      "status": "pending",
+      "title": "Add file watcher for auto-reindex",
+      "description": "Use chokidar to watch the vault for file changes and trigger incremental re-indexing automatically. Debounce rapid changes.",
       "acceptance_criteria": [
-        "Handles conversations.json format",
-        "Extracts all message metadata",
-        "Unit tests pass for edge cases"
+        "chokidar watches configured vault paths",
+        "File add/change triggers incremental index update",
+        "File delete removes entries from index",
+        "Debounce of 2 seconds to batch rapid changes",
+        "Watcher starts with server, stops on shutdown"
       ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-004"]
+      "file_targets": ["src/src/server/watcher.ts"],
+      "created": "2026-02-17",
+      "completed": null,
+      "blocked_by": []
     },
     {
-      "id": "TASK-006",
-      "milestone": "M1",
+      "id": "P1-006",
+      "phase": "P1",
       "priority": 6,
-      "status": "completed",
-      "description": "Normalize ChatGPT conversations to JSONL format",
+      "status": "pending",
+      "title": "Expose agent-to-agent tools for LLM",
+      "description": "Create agent_list, agent_send, and agent_ask as LLM-callable tools in the agent loop. These enable multi-agent collaboration from within conversations.",
       "acceptance_criteria": [
-        "Outputs valid JSONL",
-        "Each line is a complete conversation record",
-        "Timestamps normalized to ISO format"
+        "agent_list tool returns available agents with metadata",
+        "agent_send sends async message to another agent",
+        "agent_ask sends request and waits for response (sync delegation)",
+        "Tools registered in tool definitions for execute stage",
+        "Scope enforcement: only Admin can use agent_ask by default"
       ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-005"]
+      "file_targets": ["src/src/agent/tools/agent-tools.ts"],
+      "created": "2026-02-17",
+      "completed": null,
+      "blocked_by": []
     },
     {
-      "id": "TASK-007",
-      "milestone": "M1",
+      "id": "P1-007",
+      "phase": "P1",
       "priority": 7,
-      "status": "completed",
-      "description": "Generate per-conversation markdown files",
+      "status": "pending",
+      "title": "Add .env.example and configuration docs",
+      "description": "Create .env.example with all required and optional env vars documented. Update README or docs with setup instructions for API keys.",
       "acceptance_criteria": [
-        "MD files with YAML frontmatter",
-        "Transcript formatted correctly",
-        "Files named with date and slug"
+        ".env.example lists all env vars with descriptions",
+        "ANTHROPIC_API_KEY, VAULT_PATH, PORT documented",
+        "Optional vars for embedding model, log level documented",
+        "Setup instructions in docs or README"
       ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-006"]
+      "file_targets": [".env.example", "docs/SETUP.md"],
+      "created": "2026-02-17",
+      "completed": null,
+      "blocked_by": []
     },
     {
-      "id": "TASK-008",
-      "milestone": "M1",
+      "id": "P2-001",
+      "phase": "P2",
       "priority": 8,
-      "status": "completed",
-      "description": "Store raw and parsed files in 70_Sources/ChatGPT/",
+      "status": "pending",
+      "title": "Implement orchestrator agent routing",
+      "description": "Create a central orchestrator in the Admin agent that routes incoming requests to the appropriate project agent based on context analysis. The orchestrator classifies intent and delegates.",
       "acceptance_criteria": [
-        "raw/ contains untouched exports",
-        "parsed/ contains JSONL",
-        "md/ contains markdown files"
+        "Admin agent acts as orchestrator when no specific project targeted",
+        "Intent classification determines which project agent handles request",
+        "Context from request analyzed to select agent",
+        "Fallback to Admin if no project match",
+        "Routing decisions logged"
       ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-007"]
+      "file_targets": ["src/src/agent/orchestrator.ts"],
+      "created": "2026-02-17",
+      "completed": null,
+      "blocked_by": ["P1-001", "P1-006"]
     },
     {
-      "id": "TASK-009",
-      "milestone": "M1",
+      "id": "P2-002",
+      "phase": "P2",
       "priority": 9,
-      "status": "completed",
-      "description": "Support ZIP extraction for ChatGPT exports",
+      "status": "pending",
+      "title": "Implement structured memory store",
+      "description": "Add memory.json as structured backing store for MEMORY.md. Each memory entry has: id, type (fact/decision/preference/goal/todo/event/observation), importance score, timestamps, and graph edges (relatesTo, updates, contradicts).",
       "acceptance_criteria": [
-        "Extracts ZIP files automatically",
-        "Handles nested folder structures",
-        "Cleans up temp files"
+        "memory.json schema defined with Zod",
+        "Memory types: fact, decision, preference, goal, todo, event, observation",
+        "Importance score (0-1) with decay over time",
+        "Graph edges between memory entries",
+        "MEMORY.md auto-generated from memory.json for human readability",
+        "Read/write functions with validation"
       ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-008"]
+      "file_targets": ["src/src/agent/memory-store.ts"],
+      "created": "2026-02-17",
+      "completed": null,
+      "blocked_by": []
     },
     {
-      "id": "TASK-010",
-      "milestone": "M2",
+      "id": "P2-003",
+      "phase": "P2",
       "priority": 10,
-      "status": "completed",
-      "description": "Create collection manifest with file hashing",
+      "status": "pending",
+      "title": "Build Workshop v1 — connect canvas to real agents",
+      "description": "Connect the Workshop UI to real backend agent chat. When entering a workshop, load the project agent with its knowledge context. Skills panel launches skill agents. Canvas renders artifacts from skill executions.",
       "acceptance_criteria": [
-        "manifest.json generated with SHA256 hashes",
-        "All files fingerprinted",
-        "Metadata includes size, mime type"
+        "Workshop loads project context pack on entry",
+        "Agent chat sends messages to real project agent via API",
+        "Skills panel lists available skills from registry",
+        "Skill execution results rendered as artifacts on canvas",
+        "Session maintained across interactions"
       ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-004"]
+      "file_targets": ["frontend/src/components/Workshop/", "frontend/src/pages/WorkshopPage.tsx"],
+      "created": "2026-02-17",
+      "completed": null,
+      "blocked_by": ["P1-001", "P1-002"]
     },
     {
-      "id": "TASK-011",
-      "milestone": "M2",
+      "id": "P2-004",
+      "phase": "P2",
       "priority": 11,
-      "status": "completed",
-      "description": "Text extraction for md/txt files",
+      "status": "pending",
+      "title": "Add model routing by task type",
+      "description": "Implement a model routing layer that selects the appropriate LLM based on task type. Chat gets best model, extraction gets structured model, compaction gets cheapest model.",
       "acceptance_criteria": [
-        "Content extracted correctly",
-        "Encoding handled properly",
-        "Line numbers preserved"
+        "ModelRouter interface with route(taskType) method",
+        "Task types: chat, extract, compact, embed, branch",
+        "Configurable model per task type in config",
+        "Fallback chain if primary model fails (429/502)",
+        "Routing decisions logged"
       ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-010"]
+      "file_targets": ["src/src/llm/router.ts"],
+      "created": "2026-02-17",
+      "completed": null,
+      "blocked_by": ["P1-001"]
     },
     {
-      "id": "TASK-012",
-      "milestone": "M2",
+      "id": "P2-005",
+      "phase": "P2",
       "priority": 12,
-      "status": "completed",
-      "description": "Text extraction for docx/pdf files (best effort)",
+      "status": "pending",
+      "title": "Create skills registry with discovery",
+      "description": "Create a skills.json registry that catalogs all available skills with metadata. Admin agent can discover skills by searching the registry. Skills declare their tool requirements.",
       "acceptance_criteria": [
-        "Basic text extracted from PDFs",
-        "DOCX content parsed",
-        "Graceful fallback for failures"
+        "skills.json generated from agents/skills/ directory scan",
+        "Each skill has: name, description, capabilities, version, toolRequirements",
+        "API endpoint GET /api/skills returns registry",
+        "Agent can search skills by capability",
+        "Registry refreshed on file change"
       ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-011"]
+      "file_targets": ["src/src/agent/skills-registry.ts", "agents/skills/registry.json"],
+      "created": "2026-02-17",
+      "completed": null,
+      "blocked_by": []
     },
     {
-      "id": "TASK-013",
-      "milestone": "M2",
+      "id": "P3-001",
+      "phase": "P3",
       "priority": 13,
-      "status": "completed",
-      "description": "Incremental change detection for folder ingestion",
+      "status": "pending",
+      "title": "Implement Brain Cortex (meta-agent)",
+      "description": "Create a Cortex meta-agent that runs on schedule (daily). It scans all agent memories for patterns, contradictions, and stale entries. Generates a knowledge bulletin injected into Admin prompt.",
       "acceptance_criteria": [
-        "Only changed files reprocessed",
-        "Hash comparison works correctly",
-        "Manifest updated incrementally"
+        "Cortex runs as scheduled agent (daily cron)",
+        "Scans all MEMORY.md / memory.json across agents",
+        "Detects contradictions, duplicates, stale entries",
+        "Generates knowledge bulletin markdown",
+        "Bulletin injected into Admin agent context",
+        "Health report: failed runs, error patterns"
       ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-012"]
+      "file_targets": ["src/src/agent/cortex.ts"],
+      "created": "2026-02-17",
+      "completed": null,
+      "blocked_by": ["P2-001", "P2-002"]
     },
     {
-      "id": "TASK-014",
-      "milestone": "M3",
+      "id": "P3-002",
+      "phase": "P3",
       "priority": 14,
-      "status": "completed",
-      "description": "Create SQLite schema (sources, chunks, items, entities, links)",
+      "status": "pending",
+      "title": "Add non-blocking execution with branches",
+      "description": "Implement branch mechanism that forks agent context for long-running tasks. Channel remains responsive while branch thinks. Results delivered via WebSocket.",
       "acceptance_criteria": [
-        "All tables created with proper relationships",
-        "Indexes for common queries",
-        "Migration system in place"
+        "Branch forks from current agent context",
+        "Channel returns immediate acknowledgment",
+        "Branch executes independently, returns conclusion",
+        "Results pushed to client via WebSocket event",
+        "Multiple branches can run concurrently",
+        "Branch timeout with cleanup"
       ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-004"]
+      "file_targets": ["src/src/agent/branch.ts"],
+      "created": "2026-02-17",
+      "completed": null,
+      "blocked_by": ["P1-001"]
     },
     {
-      "id": "TASK-015",
-      "milestone": "M3",
+      "id": "P3-003",
+      "phase": "P3",
       "priority": 15,
-      "status": "completed",
-      "description": "Implement chunker with line number mapping",
+      "status": "pending",
+      "title": "Implement memory graph with edges and decay",
+      "description": "Extend structured memory store with graph edges (RelatedTo, Updates, Contradicts, CausedBy, PartOf) and importance decay. Add graph traversal queries.",
       "acceptance_criteria": [
-        "Chunks 800-1500 chars with overlap",
-        "Start/end line numbers preserved",
-        "Handles various content types"
+        "Edge types: relatesTo, updates, contradicts, causedBy, partOf",
+        "Importance decay based on last-accessed time",
+        "Identity memories exempt from decay",
+        "Graph traversal: given memory, find related N hops",
+        "Duplicate detection and merge suggestions",
+        "Pruning: remove memories below importance threshold"
       ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-014"]
+      "file_targets": ["src/src/agent/memory-graph.ts"],
+      "created": "2026-02-17",
+      "completed": null,
+      "blocked_by": ["P2-002"]
     },
     {
-      "id": "TASK-016",
-      "milestone": "M3",
+      "id": "P3-004",
+      "phase": "P3",
       "priority": 16,
-      "status": "completed",
-      "description": "Enable FTS5 full-text indexing",
+      "status": "pending",
+      "title": "Add circuit breakers to scheduled jobs",
+      "description": "Enhance scheduler with circuit breaker pattern. Auto-disable jobs after N consecutive failures. Add health monitoring and alerting.",
       "acceptance_criteria": [
-        "FTS5 table created",
-        "Content indexed for search",
-        "Relevance ranking works"
+        "Circuit breaker trips after 3 consecutive failures (configurable)",
+        "Tripped jobs skip execution until manually reset or cooldown expires",
+        "Cooldown period configurable (default: 1 hour)",
+        "Health status exposed via API: healthy/degraded/tripped",
+        "Event emitted on circuit trip/reset"
       ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-015"]
+      "file_targets": ["src/src/agent/scheduler.ts"],
+      "created": "2026-02-17",
+      "completed": null,
+      "blocked_by": []
     },
     {
-      "id": "TASK-017",
-      "milestone": "M3",
+      "id": "P3-005",
+      "phase": "P3",
       "priority": 17,
-      "status": "completed",
-      "description": "Implement brain index command",
+      "status": "pending",
+      "title": "Build auto-improvement scanning agent",
+      "description": "Create a meta-agent that periodically scans for new tools, models, and frameworks relevant to Brain. Suggests skill upgrades and configuration changes.",
       "acceptance_criteria": [
-        "Indexes all sources",
-        "Supports --scope flag",
-        "Progress reporting"
+        "Agent runs weekly on schedule",
+        "Scans configured sources (GitHub trending, npm, changelog feeds)",
+        "Evaluates relevance to current skill set",
+        "Generates upgrade suggestions as memory entries",
+        "Human approval required before any changes applied"
       ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-016"]
+      "file_targets": ["src/src/agent/auto-improve.ts"],
+      "created": "2026-02-17",
+      "completed": null,
+      "blocked_by": ["P3-001"]
     },
     {
-      "id": "TASK-018",
-      "milestone": "M3",
+      "id": "P4-001",
+      "phase": "P4",
       "priority": 18,
-      "status": "completed",
-      "description": "Implement incremental reindex by hash",
+      "status": "pending",
+      "title": "Create Obsidian plugin for Brain integration",
+      "description": "Build an Obsidian plugin that provides two-way sync between Obsidian and Brain. Trigger extraction from Obsidian, view knowledge items, search from sidebar.",
       "acceptance_criteria": [
-        "Only new/changed content indexed",
-        "Deleted content removed from index",
-        "Performance improvement measurable"
+        "Obsidian plugin skeleton with manifest.json",
+        "Command: Trigger Brain extraction on current file",
+        "Sidebar view: Search Brain knowledge base",
+        "Status bar: Brain connection status",
+        "Settings: API URL, auto-sync toggle"
       ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-017"]
+      "file_targets": ["obsidian-plugin/"],
+      "created": "2026-02-17",
+      "completed": null,
+      "blocked_by": ["P1-002"]
     },
     {
-      "id": "TASK-019",
-      "milestone": "M4",
+      "id": "P4-002",
+      "phase": "P4",
       "priority": 19,
-      "status": "completed",
-      "description": "Implement scope parser for path globs",
+      "status": "pending",
+      "title": "Add knowledge graph visualization",
+      "description": "Build an interactive knowledge graph view using D3.js or Cytoscape. Show entities, relations, and memory connections. Clickable nodes navigate to source.",
       "acceptance_criteria": [
-        "path:30_Projects/* filters correctly",
-        "Glob patterns supported",
-        "Nested paths work"
+        "Force-directed graph layout",
+        "Nodes = entities/memories, edges = relations",
+        "Node size by importance/connection count",
+        "Click node to view details or navigate to source",
+        "Filter by type, project, date range",
+        "Responsive and performant for 500+ nodes"
       ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-017"]
+      "file_targets": ["frontend/src/components/KnowledgeGraph/"],
+      "created": "2026-02-17",
+      "completed": null,
+      "blocked_by": ["P2-002"]
     },
     {
-      "id": "TASK-020",
-      "milestone": "M4",
+      "id": "P4-003",
+      "phase": "P4",
       "priority": 20,
-      "status": "completed",
-      "description": "Implement scope parser for collection filter",
+      "status": "pending",
+      "title": "Add E2E tests with Playwright",
+      "description": "Set up Playwright for end-to-end testing. Cover critical user flows: project creation, file upload, extraction, search, agent chat.",
       "acceptance_criteria": [
-        "collection:chatgpt works",
-        "Multiple collections supported",
-        "Combines with other scopes"
+        "Playwright configured with test fixtures",
+        "Test: Create project, upload file, verify indexed",
+        "Test: Search returns relevant results",
+        "Test: Agent chat sends/receives messages",
+        "CI-compatible (headless mode)",
+        "Test report generated"
       ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-019"]
+      "file_targets": ["e2e/"],
+      "created": "2026-02-17",
+      "completed": null,
+      "blocked_by": ["P1-001", "P1-002"]
     },
     {
-      "id": "TASK-021",
-      "milestone": "M4",
+      "id": "P4-004",
+      "phase": "P4",
       "priority": 21,
-      "status": "completed",
-      "description": "Implement scope parser for tag filter",
+      "status": "pending",
+      "title": "Security hardening — tool execution sandboxing",
+      "description": "Add security boundaries for agent tool execution. Implement permission model for file access, shell commands, and network requests.",
       "acceptance_criteria": [
-        "tag:moneta filters by frontmatter",
-        "Multiple tags supported",
-        "AND/OR logic works"
+        "Tool execution runs within defined scope boundaries",
+        "File tools cannot access outside agent scope",
+        "Shell tool disabled by default, opt-in per agent",
+        "Network requests logged and rate-limited",
+        "Security violations logged with full context"
       ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-020"]
-    },
-    {
-      "id": "TASK-022",
-      "milestone": "M4",
-      "priority": 22,
-      "status": "completed",
-      "description": "Implement MOC traversal with wiki link parsing",
-      "acceptance_criteria": [
-        "Follows [[wiki links]] N hops",
-        "Configurable depth",
-        "Cycle detection"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-021"]
-    },
-    {
-      "id": "TASK-023",
-      "milestone": "M4",
-      "priority": 23,
-      "status": "completed",
-      "description": "Implement brain search returning context bundle",
-      "acceptance_criteria": [
-        "Returns snippets with citations",
-        "File paths included",
-        "Respects scope filters"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-022"]
-    },
-    {
-      "id": "TASK-024",
-      "milestone": "M5",
-      "priority": 24,
-      "status": "completed",
-      "description": "Create LLM provider abstraction (Claude)",
-      "acceptance_criteria": [
-        "Anthropic API integration works",
-        "Provider interface defined",
-        "Error handling robust"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-004"]
-    },
-    {
-      "id": "TASK-025",
-      "milestone": "M5",
-      "priority": 25,
-      "status": "completed",
-      "description": "Create extraction prompt with JSON schema output",
-      "acceptance_criteria": [
-        "Structured output from LLM",
-        "Schema matches data model",
-        "Prompt tested and refined"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-024"]
-    },
-    {
-      "id": "TASK-026",
-      "milestone": "M5",
-      "priority": 26,
-      "status": "completed",
-      "description": "Add Zod validation for extraction output",
-      "acceptance_criteria": [
-        "Invalid responses caught",
-        "Retry logic on validation failure",
-        "Clear error messages"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-025"]
-    },
-    {
-      "id": "TASK-027",
-      "milestone": "M5",
-      "priority": 27,
-      "status": "completed",
-      "description": "Implement idempotent item creation with hash-based IDs",
-      "acceptance_criteria": [
-        "Same input produces same ID",
-        "No duplicates on rerun",
-        "Updates existing items"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-026"]
-    },
-    {
-      "id": "TASK-028",
-      "milestone": "M5",
-      "priority": 28,
-      "status": "completed",
-      "description": "Implement entity note creation/update",
-      "acceptance_criteria": [
-        "Notes created with frontmatter",
-        "Hot/warm sections populated",
-        "Backlinks maintained"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-027"]
-    },
-    {
-      "id": "TASK-029",
-      "milestone": "M5",
-      "priority": 29,
-      "status": "completed",
-      "description": "Update source markdown header with extraction results",
-      "acceptance_criteria": [
-        "Summary added to header",
-        "Items listed",
-        "Original content preserved"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-028"]
-    },
-    {
-      "id": "TASK-030",
-      "milestone": "M5",
-      "priority": 30,
-      "status": "completed",
-      "description": "Implement brain extract command",
-      "acceptance_criteria": [
-        "Full extraction pipeline works",
-        "Supports --limit and --since flags",
-        "Progress reporting"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-029"]
-    },
-    {
-      "id": "TASK-031",
-      "milestone": "M6",
-      "priority": 31,
-      "status": "completed",
-      "description": "Implement weekly hot/warm section updates",
-      "acceptance_criteria": [
-        "Items sorted by recency",
-        "Hot = 7 days, Warm = 30 days",
-        "Entity notes updated"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-030"]
-    },
-    {
-      "id": "TASK-032",
-      "milestone": "M6",
-      "priority": 32,
-      "status": "completed",
-      "description": "Generate project status snapshots",
-      "acceptance_criteria": [
-        "Open tasks listed",
-        "Recent decisions summarized",
-        "Blockers highlighted"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-031"]
-    },
-    {
-      "id": "TASK-033",
-      "milestone": "M6",
-      "priority": 33,
-      "status": "completed",
-      "description": "Generate what changed log",
-      "acceptance_criteria": [
-        "Delta report produced",
-        "Changes since last synth listed",
-        "Formatted for readability"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-032"]
-    },
-    {
-      "id": "TASK-034",
-      "milestone": "M6",
-      "priority": 34,
-      "status": "completed",
-      "description": "Implement brain synth weekly command",
-      "acceptance_criteria": [
-        "Full synthesis pipeline works",
-        "All outputs generated",
-        "Can run manually or scheduled"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-033"]
-    },
-    {
-      "id": "TASK-035",
-      "milestone": "M7",
-      "priority": 35,
-      "status": "completed",
-      "description": "Implement context pack export by scope",
-      "acceptance_criteria": [
-        "Filters notes correctly by scope",
-        "Copies relevant files",
-        "Maintains folder structure"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-023"]
-    },
-    {
-      "id": "TASK-036",
-      "milestone": "M7",
-      "priority": 36,
-      "status": "completed",
-      "description": "Generate README.md for context pack",
-      "acceptance_criteria": [
-        "Describes contents",
-        "Lists included files",
-        "Usage instructions"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-035"]
-    },
-    {
-      "id": "TASK-037",
-      "milestone": "M7",
-      "priority": 37,
-      "status": "completed",
-      "description": "Include citations and snippets in context pack",
-      "acceptance_criteria": [
-        "Provenance preserved",
-        "Source references included",
-        "Formatted for agent consumption"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-036"]
-    },
-    {
-      "id": "TASK-038",
-      "milestone": "M7",
-      "priority": 38,
-      "status": "completed",
-      "description": "Implement brain export context-pack command",
-      "acceptance_criteria": [
-        "Full export pipeline works",
-        "Pack created at target path",
-        "All components included"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-037"]
-    },
-    {
-      "id": "TASK-039",
-      "milestone": "M8",
-      "priority": 39,
-      "status": "completed",
-      "description": "Create Admin Agent directory structure and AGENT.md",
-      "acceptance_criteria": [
-        "40_Brain/agents/admin/ created",
-        "AGENT.md with full system context",
-        "MEMORY.md initialized"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-004"]
-    },
-    {
-      "id": "TASK-040",
-      "milestone": "M8",
-      "priority": 40,
-      "status": "completed",
-      "description": "Implement agent definition parser (AGENT.md frontmatter + body)",
-      "acceptance_criteria": [
-        "Parses YAML frontmatter",
-        "Extracts instructions",
-        "Validates schema"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-039"]
-    },
-    {
-      "id": "TASK-041",
-      "milestone": "M8",
-      "priority": 41,
-      "status": "completed",
-      "description": "Implement session store for agents (sessions.json + JSONL transcripts)",
-      "acceptance_criteria": [
-        "Sessions persist across runs",
-        "JSONL transcripts append-only",
-        "Session index maintained"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-040"]
-    },
-    {
-      "id": "TASK-042",
-      "milestone": "M8",
-      "priority": 42,
-      "status": "completed",
-      "description": "Implement brain agent chat interactive mode",
-      "acceptance_criteria": [
-        "Interactive chat loop works",
-        "Context loaded from agent definition",
-        "Session persisted"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-041"]
-    },
-    {
-      "id": "TASK-043",
-      "milestone": "M9",
-      "priority": 43,
-      "status": "completed",
-      "description": "Implement MEMORY.md read/write for agents",
-      "acceptance_criteria": [
-        "Agent can update working memory",
-        "Changes persisted",
-        "Versioned (git-friendly)"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-042"]
-    },
-    {
-      "id": "TASK-044",
-      "milestone": "M9",
-      "priority": 44,
-      "status": "completed",
-      "description": "Implement CONTEXT.md auto-generation from extractions",
-      "acceptance_criteria": [
-        "Populated from items.json",
-        "Hot/warm sections calculated",
-        "Regenerated on synth"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-043"]
-    },
-    {
-      "id": "TASK-045",
-      "milestone": "M9",
-      "priority": 45,
-      "status": "completed",
-      "description": "Implement context injection in agent prompts",
-      "acceptance_criteria": [
-        "AGENT.md injected",
-        "CONTEXT.md injected",
-        "MEMORY.md injected",
-        "Token limits respected"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-044"]
-    },
-    {
-      "id": "TASK-046",
-      "milestone": "M9",
-      "priority": 46,
-      "status": "completed",
-      "description": "Implement session compaction for long conversations",
-      "acceptance_criteria": [
-        "Long sessions summarized",
-        "Important context preserved",
-        "Token budget maintained"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-045"]
-    },
-    {
-      "id": "TASK-047",
-      "milestone": "M10",
-      "priority": 47,
-      "status": "completed",
-      "description": "Create Project Agent template and initialization",
-      "acceptance_criteria": [
-        "brain agent create --type project works",
-        "Creates agent/ folder in project",
-        "Initializes all required files"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-046"]
-    },
-    {
-      "id": "TASK-048",
-      "milestone": "M10",
-      "priority": 48,
-      "status": "completed",
-      "description": "Implement project scope enforcement",
-      "acceptance_criteria": [
-        "Agent cannot access outside project",
-        "Scope violations logged",
-        "Clear error messages"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-047"]
-    },
-    {
-      "id": "TASK-049",
-      "milestone": "M10",
-      "priority": 49,
-      "status": "completed",
-      "description": "Implement brain agent list and status commands",
-      "acceptance_criteria": [
-        "Lists all registered agents",
-        "Shows agent type, scope, last active",
-        "Formatted output"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-048"]
-    },
-    {
-      "id": "TASK-050",
-      "milestone": "M10",
-      "priority": 50,
-      "status": "completed",
-      "description": "Implement brain agent refresh command",
-      "acceptance_criteria": [
-        "CONTEXT.md regenerated",
-        "Uses latest extractions",
-        "Works for any agent type"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-049"]
-    },
-    {
-      "id": "TASK-051",
-      "milestone": "M11",
-      "priority": 51,
-      "status": "completed",
-      "description": "Create Skill Agent template (SKILL.md format)",
-      "acceptance_criteria": [
-        "SKILL.md format defined",
-        "Template with frontmatter + instructions",
-        "Compatible with OpenClaw pattern"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-046"]
-    },
-    {
-      "id": "TASK-052",
-      "milestone": "M11",
-      "priority": 52,
-      "status": "completed",
-      "description": "Implement SEO Skill Agent",
-      "acceptance_criteria": [
-        "Keyword analysis capabilities",
-        "Content optimization suggestions",
-        "SEO scoring"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-051"]
-    },
-    {
-      "id": "TASK-053",
-      "milestone": "M11",
-      "priority": 53,
-      "status": "completed",
-      "description": "Implement Writer Skill Agent",
-      "acceptance_criteria": [
-        "Content creation assistance",
-        "Tone adjustment",
-        "Style guidance"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-051"]
-    },
-    {
-      "id": "TASK-054",
-      "milestone": "M11",
-      "priority": 54,
-      "status": "completed",
-      "description": "Implement Brainstorm Skill Agent",
-      "acceptance_criteria": [
-        "Ideation support",
-        "Mind mapping assistance",
-        "Creative exploration"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-051"]
-    },
-    {
-      "id": "TASK-055",
-      "milestone": "M11",
-      "priority": 55,
-      "status": "completed",
-      "description": "Implement Organizer Skill Agent",
-      "acceptance_criteria": [
-        "Categorization help",
-        "Structure suggestions",
-        "Cleanup recommendations"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-051"]
-    },
-    {
-      "id": "TASK-056",
-      "milestone": "M12",
-      "priority": 56,
-      "status": "completed",
-      "description": "Implement agent-to-agent message protocol",
-      "acceptance_criteria": [
-        "Message schema defined",
-        "Send/receive works",
-        "Messages logged"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-049"]
-    },
-    {
-      "id": "TASK-057",
-      "milestone": "M12",
-      "priority": 57,
-      "status": "completed",
-      "description": "Implement brain agent send command",
-      "acceptance_criteria": [
-        "Single message to agent",
-        "Response returned",
-        "Context maintained"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-056"]
-    },
-    {
-      "id": "TASK-058",
-      "milestone": "M12",
-      "priority": 58,
-      "status": "completed",
-      "description": "Allow Admin Agent to invoke Skill Agents",
-      "acceptance_criteria": [
-        "Admin can call skills",
-        "Results returned to admin",
-        "Context passed appropriately"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-057"]
-    },
-    {
-      "id": "TASK-059",
-      "milestone": "M12",
-      "priority": 59,
-      "status": "completed",
-      "description": "Implement agent spawn capability",
-      "acceptance_criteria": [
-        "Admin can spawn new agents",
-        "Configuration applied",
-        "Agent registered"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-058"]
-    },
-    {
-      "id": "TASK-060",
-      "milestone": "M12",
-      "priority": 60,
-      "status": "completed",
-      "description": "Implement agent coordination and handoff",
-      "acceptance_criteria": [
-        "Agents can delegate tasks",
-        "Context transferred",
-        "Results aggregated"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-059"]
-    },
-    {
-      "id": "TASK-061",
-      "milestone": "M13",
-      "priority": 61,
-      "status": "completed",
-      "description": "Define DB tables for projects, runs, artifacts",
-      "acceptance_criteria": [
-        "Projects table with all fields",
-        "Runs table with status tracking",
-        "Artifacts table with provenance"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
+      "file_targets": ["src/src/agent/security.ts"],
+      "created": "2026-02-17",
+      "completed": null,
       "blocked_by": []
-    },
-    {
-      "id": "TASK-062",
-      "milestone": "M13",
-      "priority": 62,
-      "status": "completed",
-      "description": "Create TypeScript types and Zod schemas for API",
-      "acceptance_criteria": [
-        "Project, Run, Artifact types defined",
-        "Zod schemas for validation",
-        "Shared types package"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-061"]
-    },
-    {
-      "id": "TASK-063",
-      "milestone": "M13",
-      "priority": 63,
-      "status": "completed",
-      "description": "Set up Fastify server with health endpoint",
-      "acceptance_criteria": [
-        "Fastify server starts on port 3001",
-        "GET /health returns status",
-        "CORS configured for local dev"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-062"]
-    },
-    {
-      "id": "TASK-064",
-      "milestone": "M13",
-      "priority": 64,
-      "status": "completed",
-      "description": "Implement projects CRUD endpoints",
-      "acceptance_criteria": [
-        "GET /projects lists all",
-        "POST /projects creates new",
-        "GET /projects/:id returns detail",
-        "PUT /projects/:id updates"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-063"]
-    },
-    {
-      "id": "TASK-065",
-      "milestone": "M13",
-      "priority": 65,
-      "status": "completed",
-      "description": "Implement sources and agents endpoints",
-      "acceptance_criteria": [
-        "GET /sources lists collections",
-        "POST /sources/import triggers import",
-        "GET /agents lists all agents",
-        "GET /agents/:id returns detail"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-063"]
-    },
-    {
-      "id": "TASK-066",
-      "milestone": "M13",
-      "priority": 66,
-      "status": "completed",
-      "description": "Implement search endpoint wrapper",
-      "acceptance_criteria": [
-        "GET /search?q=&scope= works",
-        "Returns results with snippets",
-        "Respects scope filters"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-063"]
-    },
-    {
-      "id": "TASK-067",
-      "milestone": "M13",
-      "priority": 67,
-      "status": "completed",
-      "description": "Implement run manager and runs endpoints",
-      "acceptance_criteria": [
-        "POST /runs starts execution",
-        "GET /runs/:id returns status",
-        "Run manager tracks progress",
-        "Logs captured"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-063"]
-    },
-    {
-      "id": "TASK-068",
-      "milestone": "M13",
-      "priority": 68,
-      "status": "completed",
-      "description": "Implement WebSocket event stream",
-      "acceptance_criteria": [
-        "WS /events connection works",
-        "Run progress events stream",
-        "Agent status events stream"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-067"]
-    },
-    {
-      "id": "TASK-069",
-      "milestone": "M13",
-      "priority": 69,
-      "status": "completed",
-      "description": "Implement artifacts endpoints",
-      "acceptance_criteria": [
-        "GET /artifacts lists all",
-        "GET /artifacts/:id returns detail",
-        "Artifacts registered on run completion"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-067"]
-    },
-    {
-      "id": "TASK-070",
-      "milestone": "M14",
-      "priority": 70,
-      "status": "completed",
-      "description": "Set up React + Vite frontend project",
-      "acceptance_criteria": [
-        "Vite + React + TS configured",
-        "TailwindCSS set up",
-        "shadcn/ui initialized"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-063"]
-    },
-    {
-      "id": "TASK-071",
-      "milestone": "M14",
-      "priority": 71,
-      "status": "completed",
-      "description": "Create app layout with sidebar",
-      "acceptance_criteria": [
-        "Sidebar with navigation",
-        "Main content area",
-        "Right panel (collapsible)"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-070"]
-    },
-    {
-      "id": "TASK-072",
-      "milestone": "M14",
-      "priority": 72,
-      "status": "completed",
-      "description": "Implement command palette (Cmd+K)",
-      "acceptance_criteria": [
-        "cmdk integrated",
-        "Search actions work",
-        "Navigation actions work"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-071"]
-    },
-    {
-      "id": "TASK-073",
-      "milestone": "M14",
-      "priority": 73,
-      "status": "completed",
-      "description": "Set up Zustand stores and React Query",
-      "acceptance_criteria": [
-        "Global state store",
-        "API client configured",
-        "React Query provider set up"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-071"]
-    },
-    {
-      "id": "TASK-074",
-      "milestone": "M14",
-      "priority": 74,
-      "status": "completed",
-      "description": "Implement WebSocket client for events",
-      "acceptance_criteria": [
-        "Connects to /events",
-        "Reconnects on disconnect",
-        "Events update stores"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-073"]
-    },
-    {
-      "id": "TASK-075",
-      "milestone": "M14",
-      "priority": 75,
-      "status": "completed",
-      "description": "Create toast notifications for run events",
-      "acceptance_criteria": [
-        "Toast on run start",
-        "Toast on run complete/fail",
-        "Click to view details"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-074"]
-    },
-    {
-      "id": "TASK-076",
-      "milestone": "M15",
-      "priority": 76,
-      "status": "completed",
-      "description": "Create Home dashboard stats cards",
-      "acceptance_criteria": [
-        "Sources count",
-        "Items count",
-        "Projects count",
-        "Agents count"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-073"]
-    },
-    {
-      "id": "TASK-077",
-      "milestone": "M15",
-      "priority": 77,
-      "status": "completed",
-      "description": "Create recent activity timeline",
-      "acceptance_criteria": [
-        "Shows recent runs",
-        "Shows recent imports",
-        "Clickable entries"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-076"]
-    },
-    {
-      "id": "TASK-078",
-      "milestone": "M15",
-      "priority": 78,
-      "status": "completed",
-      "description": "Create agent status grid",
-      "acceptance_criteria": [
-        "Shows all agents",
-        "Status indicators (green/yellow/red)",
-        "Click to open Control Room"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-076"]
-    },
-    {
-      "id": "TASK-079",
-      "milestone": "M15",
-      "priority": 79,
-      "status": "completed",
-      "description": "Create quick actions panel",
-      "acceptance_criteria": [
-        "Import source button",
-        "New project button",
-        "Search button",
-        "Run extraction button"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-01",
-      "blocked_by": ["TASK-076"]
-    },
-    {
-      "id": "TASK-080",
-      "milestone": "M16",
-      "priority": 80,
-      "status": "completed",
-      "description": "Create sources collection list view",
-      "acceptance_criteria": [
-        "List all collections",
-        "Show status badges",
-        "Show counts"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-02",
-      "blocked_by": ["TASK-073"]
-    },
-    {
-      "id": "TASK-081",
-      "milestone": "M16",
-      "priority": 81,
-      "status": "completed",
-      "description": "Create import wizard - file selection",
-      "acceptance_criteria": [
-        "Drag and drop zone",
-        "File type selection",
-        "Validates file format"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-02",
-      "blocked_by": ["TASK-080"]
-    },
-    {
-      "id": "TASK-082",
-      "milestone": "M16",
-      "priority": 82,
-      "status": "completed",
-      "description": "Create import wizard - parsing progress",
-      "acceptance_criteria": [
-        "Shows parsing progress",
-        "Lists conversations found",
-        "Handles errors gracefully"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-02",
-      "blocked_by": ["TASK-081"]
-    },
-    {
-      "id": "TASK-083",
-      "milestone": "M16",
-      "priority": 83,
-      "status": "completed",
-      "description": "Create import wizard - conversation selection",
-      "acceptance_criteria": [
-        "Select/deselect conversations",
-        "Select all option",
-        "Preview conversation"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-02",
-      "blocked_by": ["TASK-082"]
-    },
-    {
-      "id": "TASK-084",
-      "milestone": "M16",
-      "priority": 84,
-      "status": "completed",
-      "description": "Create extraction preview component",
-      "acceptance_criteria": [
-        "List extracted items",
-        "Show item types",
-        "Accept/reject items"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-02",
-      "blocked_by": ["TASK-083"]
-    },
-    {
-      "id": "TASK-085",
-      "milestone": "M16",
-      "priority": 85,
-      "status": "completed",
-      "description": "Create source detail view",
-      "acceptance_criteria": [
-        "Show collection metadata",
-        "List conversations",
-        "Show extraction status"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-02",
-      "blocked_by": ["TASK-080"]
-    },
-    {
-      "id": "TASK-086",
-      "milestone": "M17",
-      "priority": 86,
-      "status": "completed",
-      "description": "Create search page with input",
-      "acceptance_criteria": [
-        "Search input with Cmd+K focus",
-        "Real-time search",
-        "Loading states"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-02",
-      "blocked_by": ["TASK-073"]
-    },
-    {
-      "id": "TASK-087",
-      "milestone": "M17",
-      "priority": 87,
-      "status": "completed",
-      "description": "Create search filters panel",
-      "acceptance_criteria": [
-        "Scope filter (path/MOC/tag)",
-        "Date range filter",
-        "Type filter (items, sources)"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-02",
-      "blocked_by": ["TASK-086"]
-    },
-    {
-      "id": "TASK-088",
-      "milestone": "M17",
-      "priority": 88,
-      "status": "completed",
-      "description": "Create search results list",
-      "acceptance_criteria": [
-        "Result cards with snippets",
-        "Highlight matches",
-        "Source citations"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-02",
-      "blocked_by": ["TASK-086"]
-    },
-    {
-      "id": "TASK-089",
-      "milestone": "M17",
-      "priority": 89,
-      "status": "completed",
-      "description": "Create search preview panel",
-      "acceptance_criteria": [
-        "Shows full context",
-        "Scroll to match",
-        "Open in Obsidian link"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-02",
-      "blocked_by": ["TASK-088"]
-    },
-    {
-      "id": "TASK-090",
-      "milestone": "M17",
-      "priority": 90,
-      "status": "completed",
-      "description": "Implement add to project action",
-      "acceptance_criteria": [
-        "Button on search results",
-        "Project selector modal",
-        "Links item to project"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-02",
-      "blocked_by": ["TASK-089"]
-    },
-    {
-      "id": "TASK-091",
-      "milestone": "M18",
-      "priority": 91,
-      "status": "completed",
-      "description": "Create Control Room agent list",
-      "acceptance_criteria": [
-        "Lists all agents",
-        "Status indicators",
-        "Group by type"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-02",
-      "blocked_by": ["TASK-073"]
-    },
-    {
-      "id": "TASK-092",
-      "milestone": "M18",
-      "priority": 92,
-      "status": "completed",
-      "description": "Create agent detail view",
-      "acceptance_criteria": [
-        "Shows agent metadata",
-        "Tabs for config/memory/logs",
-        "Edit capabilities"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-02",
-      "blocked_by": ["TASK-091"]
-    },
-    {
-      "id": "TASK-093",
-      "milestone": "M18",
-      "priority": 93,
-      "status": "completed",
-      "description": "Create config/memory editor",
-      "acceptance_criteria": [
-        "CodeMirror markdown editor",
-        "Syntax highlighting",
-        "Save changes"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-02",
-      "blocked_by": ["TASK-092"]
-    },
-    {
-      "id": "TASK-094",
-      "milestone": "M18",
-      "priority": 94,
-      "status": "completed",
-      "description": "Create runs history view",
-      "acceptance_criteria": [
-        "List all runs",
-        "Filter by agent",
-        "Status badges"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-02",
-      "blocked_by": ["TASK-091"]
-    },
-    {
-      "id": "TASK-095",
-      "milestone": "M18",
-      "priority": 95,
-      "status": "completed",
-      "description": "Create run logs viewer",
-      "acceptance_criteria": [
-        "Shows log lines",
-        "Auto-scroll",
-        "Copy logs"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-02",
-      "blocked_by": ["TASK-094"]
-    },
-    {
-      "id": "TASK-096",
-      "milestone": "M18",
-      "priority": 96,
-      "status": "completed",
-      "description": "Implement agent restart action",
-      "acceptance_criteria": [
-        "Restart button",
-        "Confirmation dialog",
-        "Updates status"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-02",
-      "blocked_by": ["TASK-092"]
-    },
-    {
-      "id": "TASK-097",
-      "milestone": "M18",
-      "priority": 97,
-      "status": "completed",
-      "description": "Create spawn agent dialog",
-      "acceptance_criteria": [
-        "Type selector",
-        "Name and scope inputs",
-        "Creates agent files"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-02",
-      "blocked_by": ["TASK-091"]
-    },
-    {
-      "id": "TASK-098",
-      "milestone": "M19",
-      "priority": 98,
-      "status": "completed",
-      "description": "Create projects list view",
-      "acceptance_criteria": [
-        "Grid/list toggle",
-        "Project cards",
-        "Status indicators"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-02",
-      "blocked_by": ["TASK-073"]
-    },
-    {
-      "id": "TASK-099",
-      "milestone": "M19",
-      "priority": 99,
-      "status": "completed",
-      "description": "Create project detail view",
-      "acceptance_criteria": [
-        "Overview tab",
-        "Knowledge tab",
-        "Agent tab",
-        "Tasks tab"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-02",
-      "blocked_by": ["TASK-098"]
-    },
-    {
-      "id": "TASK-100",
-      "milestone": "M19",
-      "priority": 100,
-      "status": "completed",
-      "description": "Create new project wizard",
-      "acceptance_criteria": [
-        "Name and description",
-        "Emoji picker",
-        "Creates folder structure"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-02",
-      "blocked_by": ["TASK-098"]
-    },
-    {
-      "id": "TASK-101",
-      "milestone": "M19",
-      "priority": 101,
-      "status": "completed",
-      "description": "Implement project agent spawning",
-      "acceptance_criteria": [
-        "Auto-spawn on project create",
-        "Configures scope",
-        "Registers in Control Room"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-02",
-      "blocked_by": ["TASK-100"]
-    },
-    {
-      "id": "TASK-102",
-      "milestone": "M19",
-      "priority": 102,
-      "status": "completed",
-      "description": "Create scope linking UI",
-      "acceptance_criteria": [
-        "Link MOCs",
-        "Link paths",
-        "Link tags"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-02",
-      "blocked_by": ["TASK-099"]
-    },
-    {
-      "id": "TASK-103",
-      "milestone": "M19",
-      "priority": 103,
-      "status": "completed",
-      "description": "Create Open in Workshop button",
-      "acceptance_criteria": [
-        "Button on project detail",
-        "Generates context pack",
-        "Opens Workshop view"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-02",
-      "blocked_by": ["TASK-099"]
-    },
-    {
-      "id": "TASK-104",
-      "milestone": "M20",
-      "priority": 104,
-      "status": "completed",
-      "description": "Create Workshop layout",
-      "acceptance_criteria": [
-        "Three-column layout",
-        "Skills panel left",
-        "Canvas center",
-        "Agent chat right"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-02",
-      "blocked_by": ["TASK-103"]
-    },
-    {
-      "id": "TASK-105",
-      "milestone": "M20",
-      "priority": 105,
-      "status": "completed",
-      "description": "Create artifact canvas component",
-      "acceptance_criteria": [
-        "Renders markdown artifacts",
-        "Scrollable history",
-        "Version indicators"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-03",
-      "blocked_by": ["TASK-104"]
-    },
-    {
-      "id": "TASK-106",
-      "milestone": "M20",
-      "priority": 106,
-      "status": "completed",
-      "description": "Create project agent chat panel",
-      "acceptance_criteria": [
-        "Chat input",
-        "Message history",
-        "Streaming responses"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-03",
-      "blocked_by": ["TASK-104"]
-    },
-    {
-      "id": "TASK-107",
-      "milestone": "M20",
-      "priority": 107,
-      "status": "completed",
-      "description": "Create context summary component",
-      "acceptance_criteria": [
-        "Shows loaded context",
-        "Memory highlights",
-        "Scope indicator"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-03",
-      "blocked_by": ["TASK-106"]
-    },
-    {
-      "id": "TASK-108",
-      "milestone": "M20",
-      "priority": 108,
-      "status": "completed",
-      "description": "Create skill agents launcher",
-      "acceptance_criteria": [
-        "List available skills",
-        "Click to invoke",
-        "Input for task"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-03",
-      "blocked_by": ["TASK-104"]
-    },
-    {
-      "id": "TASK-109",
-      "milestone": "M20",
-      "priority": 109,
-      "status": "completed",
-      "description": "Implement skill invocation flow",
-      "acceptance_criteria": [
-        "Calls skill agent",
-        "Shows progress",
-        "Result becomes artifact"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-03",
-      "blocked_by": ["TASK-108"]
-    },
-    {
-      "id": "TASK-110",
-      "milestone": "M20",
-      "priority": 110,
-      "status": "completed",
-      "description": "Create canvas mode switcher",
-      "acceptance_criteria": [
-        "Document mode",
-        "Brainstorm mode",
-        "Tasks mode",
-        "Review mode"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-03",
-      "blocked_by": ["TASK-105"]
-    },
-    {
-      "id": "TASK-111",
-      "milestone": "M20",
-      "priority": 111,
-      "status": "completed",
-      "description": "Implement context pack on workshop enter",
-      "acceptance_criteria": [
-        "Generates context pack",
-        "Loads into agent",
-        "Shows in summary"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-03",
-      "blocked_by": ["TASK-107"]
-    },
-    {
-      "id": "TASK-112",
-      "milestone": "M21",
-      "priority": 112,
-      "status": "completed",
-      "description": "Create settings page",
-      "acceptance_criteria": [
-        "Vault path config",
-        "Model selection",
-        "API key management"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-03",
-      "blocked_by": ["TASK-073"]
-    },
-    {
-      "id": "TASK-113",
-      "milestone": "M21",
-      "priority": 113,
-      "status": "completed",
-      "description": "Implement keyboard shortcuts system",
-      "acceptance_criteria": [
-        "Configurable shortcuts",
-        "Shortcuts help modal",
-        "Persist preferences"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-03",
-      "blocked_by": ["TASK-112"]
-    },
-    {
-      "id": "TASK-114",
-      "milestone": "M21",
-      "priority": 114,
-      "status": "completed",
-      "description": "Add dark/light theme support",
-      "acceptance_criteria": [
-        "Theme toggle",
-        "System preference detection",
-        "Persist preference"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-03",
-      "blocked_by": ["TASK-112"]
-    },
-    {
-      "id": "TASK-115",
-      "milestone": "M21",
-      "priority": 115,
-      "status": "completed",
-      "description": "Error handling and empty states",
-      "acceptance_criteria": [
-        "Error boundaries",
-        "Empty state illustrations",
-        "Helpful error messages"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-03",
-      "blocked_by": ["TASK-073"]
-    },
-    {
-      "id": "TASK-116",
-      "milestone": "M21",
-      "priority": 116,
-      "status": "completed",
-      "description": "Loading states and skeletons",
-      "acceptance_criteria": [
-        "Skeleton loaders",
-        "Progress indicators",
-        "Smooth transitions"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-03",
-      "blocked_by": ["TASK-115"]
-    },
-    {
-      "id": "TASK-117",
-      "milestone": "M21",
-      "priority": 117,
-      "status": "completed",
-      "description": "Final UI polish and accessibility",
-      "acceptance_criteria": [
-        "Keyboard navigation",
-        "ARIA labels",
-        "Focus management"
-      ],
-      "created": "2026-02-01",
-      "completed": "2026-02-03",
-      "blocked_by": ["TASK-116"]
-    },
-    {
-      "id": "TASK-118",
-      "milestone": "M22",
-      "priority": 118,
-      "status": "completed",
-      "description": "Wire New Project button to open wizard on Projects page",
-      "acceptance_criteria": [
-        "New Project button visible on Projects page",
-        "Clicking button opens NewProjectWizard modal",
-        "Wizard collects name, emoji, description, createAgent checkbox"
-      ],
-      "created": "2026-02-03",
-      "completed": "2026-02-03",
-      "blocked_by": []
-    },
-    {
-      "id": "TASK-119",
-      "milestone": "M22",
-      "priority": 119,
-      "status": "completed",
-      "description": "Implement backend auto-create agent folder when project created",
-      "acceptance_criteria": [
-        "POST /projects with createAgent:true creates 30_Projects/{name}/agent/ folder",
-        "AGENT.md generated with correct frontmatter and scope",
-        "MEMORY.md created with initial template",
-        "Agent ID added to project's agentIds array"
-      ],
-      "created": "2026-02-03",
-      "completed": "2026-02-03",
-      "blocked_by": ["TASK-118"]
-    },
-    {
-      "id": "TASK-120",
-      "milestone": "M22",
-      "priority": 120,
-      "status": "completed",
-      "description": "Add project sources/scopes linking UI and API",
-      "acceptance_criteria": [
-        "PUT /projects/:id/sources endpoint to update linkedScopes",
-        "Project detail page shows linked sources",
-        "UI to add/remove scope links (path, tag, MOC, collection)"
-      ],
-      "created": "2026-02-03",
-      "completed": "2026-02-03",
-      "blocked_by": ["TASK-119"]
-    },
-    {
-      "id": "TASK-121",
-      "milestone": "M22",
-      "priority": 121,
-      "status": "completed",
-      "description": "Implement project chat API endpoint",
-      "acceptance_criteria": [
-        "POST /projects/:id/chat accepts message and returns response",
-        "Agent context loaded from project's AGENT.md",
-        "Memory loaded from project's MEMORY.md",
-        "Search scoped to project's linkedScopes"
-      ],
-      "created": "2026-02-03",
-      "completed": "2026-02-03",
-      "blocked_by": ["TASK-120"]
-    },
-    {
-      "id": "TASK-122",
-      "milestone": "M22",
-      "priority": 122,
-      "status": "completed",
-      "description": "Add chat panel to project detail page",
-      "acceptance_criteria": [
-        "Chat panel displayed on project detail page",
-        "Messages sent to POST /projects/:id/chat",
-        "Responses displayed in chat history",
-        "Loading state while waiting for response"
-      ],
-      "created": "2026-02-03",
-      "completed": "2026-02-03",
-      "blocked_by": ["TASK-121"]
-    },
-    {
-      "id": "TASK-123",
-      "milestone": "M22",
-      "priority": 123,
-      "status": "completed",
-      "description": "Implement chat history persistence",
-      "acceptance_criteria": [
-        "Chat sessions saved to 30_Projects/{name}/agent/sessions/",
-        "GET /projects/:id/chat/history returns past messages",
-        "Chat history loaded on project detail page open",
-        "Sessions organized by date"
-      ],
-      "created": "2026-02-03",
-      "completed": "2026-02-03",
-      "blocked_by": ["TASK-122"]
-    },
-    {
-      "id": "TASK-124",
-      "milestone": "M22",
-      "priority": 124,
-      "status": "completed",
-      "description": "Update project agent memory after chat sessions",
-      "acceptance_criteria": [
-        "MEMORY.md updated with key insights after session",
-        "Memory update triggered on session end or manually",
-        "Memory visible in agent detail view"
-      ],
-      "created": "2026-02-03",
-      "completed": "2026-02-03",
-      "blocked_by": ["TASK-123"]
-    },
-    {
-      "id": "TASK-125",
-      "milestone": "M23",
-      "priority": 125,
-      "status": "completed",
-      "description": "Add file upload endpoint for projects",
-      "acceptance_criteria": [
-        "POST /projects/:id/upload endpoint accepts multipart files",
-        "Files saved to project folder in vault",
-        "Returns list of uploaded and failed files",
-        "Supported formats: .md, .txt, .pdf, .json, .csv"
-      ],
-      "created": "2026-02-03",
-      "completed": "2026-02-04",
-      "blocked_by": []
-    },
-    {
-      "id": "TASK-126",
-      "milestone": "M23",
-      "priority": 126,
-      "status": "completed",
-      "description": "Add file upload UI to project detail page",
-      "acceptance_criteria": [
-        "Drag-and-drop zone in project detail",
-        "File picker with multi-select",
-        "Upload progress indicator",
-        "Success/error feedback"
-      ],
-      "created": "2026-02-03",
-      "completed": "2026-02-04",
-      "blocked_by": ["TASK-125"]
-    },
-    {
-      "id": "TASK-127",
-      "milestone": "M23",
-      "priority": 127,
-      "status": "completed",
-      "description": "Add extraction endpoint for projects",
-      "acceptance_criteria": [
-        "POST /projects/:id/extract triggers extraction",
-        "Scans files in project folder and linked sources",
-        "Extracts entities, claims, tasks, decisions via LLM",
-        "Stores items in items.json within project folder"
-      ],
-      "created": "2026-02-03",
-      "completed": "2026-02-04",
-      "blocked_by": []
-    },
-    {
-      "id": "TASK-128",
-      "milestone": "M23",
-      "priority": 128,
-      "status": "completed",
-      "description": "Add extraction trigger button to project UI",
-      "acceptance_criteria": [
-        "Extract button in project detail page",
-        "Shows progress during extraction",
-        "Displays count of extracted items on completion"
-      ],
-      "created": "2026-02-03",
-      "completed": "2026-02-04",
-      "blocked_by": ["TASK-127"]
-    },
-    {
-      "id": "TASK-129",
-      "milestone": "M23",
-      "priority": 129,
-      "status": "completed",
-      "description": "Add knowledge items endpoint for projects",
-      "acceptance_criteria": [
-        "GET /projects/:id/knowledge returns extracted items",
-        "Supports filtering by type",
-        "Supports search query",
-        "Returns paginated results with total count"
-      ],
-      "created": "2026-02-03",
-      "completed": "2026-02-04",
-      "blocked_by": ["TASK-127"]
-    },
-    {
-      "id": "TASK-130",
-      "milestone": "M23",
-      "priority": 130,
-      "status": "completed",
-      "description": "Populate Knowledge tab with extracted items",
-      "acceptance_criteria": [
-        "Knowledge tab displays items from API",
-        "Items show type icon and content preview",
-        "Filter by item type works",
-        "Search within items works",
-        "Click item shows source citation"
-      ],
-      "created": "2026-02-03",
-      "completed": "2026-02-04",
-      "blocked_by": ["TASK-129"]
     }
-  ],
-  "milestones": {
-    "M0": {
-      "name": "Bootstrap",
-      "description": "Repo scaffold, config, CLI skeleton",
-      "estimatedDays": 1
-    },
-    "M1": {
-      "name": "ChatGPT Ingestion",
-      "description": "Parse and store ChatGPT exports",
-      "estimatedDays": 2
-    },
-    "M2": {
-      "name": "Folder Ingestion",
-      "description": "Ingest files and folders with manifests",
-      "estimatedDays": 2
-    },
-    "M3": {
-      "name": "Indexing",
-      "description": "SQLite schema, chunking, FTS5",
-      "estimatedDays": 2
-    },
-    "M4": {
-      "name": "Retrieval & Scopes",
-      "description": "Scoped search with citations",
-      "estimatedDays": 2
-    },
-    "M5": {
-      "name": "Extraction",
-      "description": "LLM extraction pipeline",
-      "estimatedDays": 4
-    },
-    "M6": {
-      "name": "Synthesis",
-      "description": "Weekly synthesis and updates",
-      "estimatedDays": 2
-    },
-    "M7": {
-      "name": "Context Pack Export",
-      "description": "Export knowledge for code repos",
-      "estimatedDays": 1
-    },
-    "M8": {
-      "name": "Agent Foundation",
-      "description": "Admin agent and core agent infrastructure",
-      "estimatedDays": 3
-    },
-    "M9": {
-      "name": "Agent Memory",
-      "description": "Persistent memory and context injection",
-      "estimatedDays": 3
-    },
-    "M10": {
-      "name": "Project Agents",
-      "description": "Scoped project agents",
-      "estimatedDays": 2
-    },
-    "M11": {
-      "name": "Skill Agents",
-      "description": "Specialized skill agents",
-      "estimatedDays": 3
-    },
-    "M12": {
-      "name": "Agent Communication",
-      "description": "Inter-agent messaging and coordination",
-      "estimatedDays": 3
-    },
-    "M13": {
-      "name": "API Layer",
-      "description": "Fastify API server with all endpoints",
-      "estimatedDays": 4
-    },
-    "M14": {
-      "name": "UI Shell",
-      "description": "React app shell, layout, command palette",
-      "estimatedDays": 3
-    },
-    "M15": {
-      "name": "Home Dashboard",
-      "description": "Stats, activity, agent grid",
-      "estimatedDays": 2
-    },
-    "M16": {
-      "name": "Sources UI",
-      "description": "Import wizard, collections, extraction preview",
-      "estimatedDays": 4
-    },
-    "M17": {
-      "name": "Search UI",
-      "description": "Scoped search with filters and preview",
-      "estimatedDays": 3
-    },
-    "M18": {
-      "name": "Control Room",
-      "description": "Agent management, runs, logs",
-      "estimatedDays": 4
-    },
-    "M19": {
-      "name": "Projects UI",
-      "description": "Project CRUD, agent spawning, scope linking",
-      "estimatedDays": 4
-    },
-    "M20": {
-      "name": "Workshop v1",
-      "description": "Artifact canvas, agent chat, skill invocation",
-      "estimatedDays": 7
-    },
-    "M21": {
-      "name": "Settings & Polish",
-      "description": "Configuration, shortcuts, final polish",
-      "estimatedDays": 3
-    },
-    "M22": {
-      "name": "Project Workflow",
-      "description": "Complete project creation, agent spawning, source linking, and chat",
-      "estimatedDays": 5
-    },
-    "M23": {
-      "name": "Project Knowledge Management",
-      "description": "File upload, extraction pipeline, and knowledge display",
-      "estimatedDays": 6
-    }
-  }
+  ]
 }
